@@ -11,6 +11,7 @@ GameObject:
   - component: {fileID: 1766743027912837315}
   - component: {fileID: 8496931768320211773}
   - component: {fileID: 2332195278339640660}
+  - component: {fileID: 6101455424693360333}
   m_Layer: 0
   m_Name: Background Tile
   m_TagString: Untagged
@@ -97,10 +98,56 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9fada404c2152ef4891179c0dce9ceb5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _orbTypes:
-  - {fileID: 8644979988231993271, guid: 89aefcee9eca3ce4cbb60fabc0f36f18, type: 3}
-  - {fileID: 7265332873811150174, guid: c56d897d587033043b91ca81e5ada9c2, type: 3}
-  - {fileID: 6502116257071558465, guid: 18fa4fa66f82d7440bd74edd1d1a8980, type: 3}
-  - {fileID: 2665371372522605326, guid: 727abd17f228ca64eb19ca5ad913a361, type: 3}
-  - {fileID: 4005859067783085852, guid: 43521bbb7afdb3644bc5b3ab61dd44c0, type: 3}
-  - {fileID: 273335353347537412, guid: dbf1eac792d8bda4db3134ad26d81012, type: 3}
+--- !u!60 &6101455424693360333
+PolygonCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7357175230137175867}
+  m_Enabled: 1
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_UsedByComposite: 0
+  m_Offset: {x: 0, y: 0}
+  m_SpriteTilingProperty:
+    border: {x: 0, y: 0, z: 0, w: 0}
+    pivot: {x: 0.5, y: 0.5}
+    oldSize: {x: 1, y: 1}
+    newSize: {x: 1, y: 1}
+    adaptiveTilingThreshold: 0.5
+    drawMode: 0
+    adaptiveTiling: 0
+  m_AutoTiling: 0
+  m_Points:
+    m_Paths:
+    - - {x: -0.45, y: 0.499}
+      - {x: -0.499, y: 0.45}
+      - {x: -0.499, y: -0.45}
+      - {x: -0.45, y: -0.499}
+      - {x: 0.45, y: -0.499}
+      - {x: 0.499, y: -0.45}
+      - {x: 0.499, y: 0.45}
+      - {x: 0.45, y: 0.499}
+  m_UseDelaunayMesh: 0
