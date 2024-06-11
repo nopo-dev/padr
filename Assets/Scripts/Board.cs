@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Board : MonoBehaviour {
@@ -7,7 +8,7 @@ public class Board : MonoBehaviour {
     [SerializeField] private GameObject _tilePrefab;
     [SerializeField] private int _width;
     [SerializeField] private int _height;
-    [SerializeField] private GameObject[] _orbTypes;
+    [SerializeField] private GameObject[] _orbPrefabs;
 
     public int Width {
         get { return _width; }
@@ -23,6 +24,7 @@ public class Board : MonoBehaviour {
     private GameObject[,] _orbs;
     private GameObject _selectedOrb;
     private GameObject _currentTile;
+    private GameObject _ghostOrb;
 
     public bool OrbSelected;
 
@@ -37,6 +39,16 @@ public class Board : MonoBehaviour {
         _selectedOrb.GetComponent<Orb>().Selected = true;
         OrbSelected = true;
         SetCurrentTile(c);
+
+        CreateGhostOrb(c);
+    }
+
+    private void CreateGhostOrb(Coords c) {
+        _ghostOrb = Instantiate(_orbPrefabs[(int)_selectedOrb.GetComponent<Orb>().Type], transform);
+        _ghostOrb.transform.localPosition = new Vector2((float)c.X, (float)c.Y);
+        Color color = _ghostOrb.GetComponent<SpriteRenderer>().color;
+        color.a = 0.25f;
+        _ghostOrb.GetComponent<SpriteRenderer>().color = color;
     }
 
     private void SetCurrentTile(Coords c) {
@@ -57,6 +69,8 @@ public class Board : MonoBehaviour {
 
         Coords currentPos = _selectedOrb.GetComponent<Orb>().Location;
         _selectedOrb.transform.localPosition = new Vector2((float)currentPos.X, (float)currentPos.Y);
+
+        Destroy(_ghostOrb);
     }
 
     public void MoveOrb(Coords c) {
@@ -64,7 +78,10 @@ public class Board : MonoBehaviour {
         Coords moveTo = _selectedOrb.GetComponent<Orb>().Location;
         _orbs[moveTo.X, moveTo.Y] = _orbs[c.X, c.Y];
         _orbs[c.X, c.Y].GetComponent<Orb>().Location = moveTo;
-        _orbs[c.X, c.Y].transform.localPosition = new Vector2((float)moveTo.X, (float)moveTo.Y);
+        _orbs[c.X, c.Y].GetComponent<Orb>().Move(new Vector2(moveTo.X - c.X, moveTo.Y - c.Y));
+
+        _ghostOrb.GetComponent<Orb>().Location = c;
+        _ghostOrb.GetComponent<Orb>().Move(new Vector2(c.X - moveTo.X, c.Y - moveTo.Y));
 
         _selectedOrb.GetComponent<Orb>().Location = c;
         _orbs[c.X, c.Y] = _selectedOrb;
@@ -80,8 +97,9 @@ public class Board : MonoBehaviour {
                 tile.GetComponent<BackgroundTile>().Location = new Coords(col, row);
                 _tiles[col, row] = tile;
 
-                int orbType = Random.Range(0, _orbTypes.Length);
-                GameObject orb = Instantiate(_orbTypes[orbType], transform);
+                int orbType = Random.Range(0, _orbPrefabs.Length);
+                GameObject orb = Instantiate(_orbPrefabs[orbType], transform);
+                orb.GetComponent<Orb>().Type = (OrbType)orbType;
                 orb.transform.localPosition =  position;
                 orb.transform.localRotation = Quaternion.identity;
                 orb.GetComponent<Orb>().Location = new Coords(col, row);
