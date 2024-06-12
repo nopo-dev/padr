@@ -39,8 +39,7 @@ public class InputController : MonoBehaviour {
 
     // todo: lock orb movement to board
     //       move orbs according to selected orb, not cursor
-    //       ghost orb in current tile
-    //       orb movement animation
+    //       cap orb movement speed 
 
     // todo: matches and combos
 }

@@ -73,15 +73,29 @@ public class Board : MonoBehaviour {
         Destroy(_ghostOrb);
     }
 
+    private Vector2 _upLeft = Vector2.left + Vector2.up;
+    private Vector2 _downRight = Vector2.right + Vector2.down;
+
     public void MoveOrb(Coords c) {
         SetCurrentTile(c);
         Coords moveTo = _selectedOrb.GetComponent<Orb>().Location;
         _orbs[moveTo.X, moveTo.Y] = _orbs[c.X, c.Y];
         _orbs[c.X, c.Y].GetComponent<Orb>().Location = moveTo;
-        _orbs[c.X, c.Y].GetComponent<Orb>().Move(new Vector2(moveTo.X - c.X, moveTo.Y - c.Y));
+
+        Vector2 direction = new Vector2(moveTo.X - c.X, moveTo.Y - c.Y);
+        if (direction == Vector2.left || direction == Vector2.down ||
+            direction == -Vector2.one || direction == _upLeft) {
+            _orbs[c.X, c.Y].GetComponent<Orb>().Reverse = true;
+            _ghostOrb.GetComponent<Orb>().Reverse = true;
+        } else {
+            _orbs[c.X, c.Y].GetComponent<Orb>().Reverse = false;
+            _ghostOrb.GetComponent<Orb>().Reverse = false;
+        }
+        _orbs[c.X, c.Y].GetComponent<Orb>().Move(direction);
 
         _ghostOrb.GetComponent<Orb>().Location = c;
-        _ghostOrb.GetComponent<Orb>().Move(new Vector2(c.X - moveTo.X, c.Y - moveTo.Y));
+        //_ghostOrb.GetComponent<Orb>().Move(-direction);
+        _ghostOrb.transform.localPosition += new Vector3(-direction.x, -direction.y, 0);
 
         _selectedOrb.GetComponent<Orb>().Location = c;
         _orbs[c.X, c.Y] = _selectedOrb;
