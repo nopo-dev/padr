@@ -47,7 +47,7 @@ public class Board : MonoBehaviour {
         _ghostOrb = Instantiate(_orbPrefabs[(int)_selectedOrb.GetComponent<Orb>().Type], transform);
         _ghostOrb.transform.localPosition = new Vector2((float)c.X, (float)c.Y);
         Color color = _ghostOrb.GetComponent<SpriteRenderer>().color;
-        color.a = 0.25f;
+        color.a = 0.15f;
         _ghostOrb.GetComponent<SpriteRenderer>().color = color;
     }
 
@@ -73,6 +73,9 @@ public class Board : MonoBehaviour {
         Destroy(_ghostOrb);
     }
 
+    private Vector2 _upLeft = Vector2.left + Vector2.up;
+    private Vector2 _downRight = Vector2.right + Vector2.down;
+
     public void MoveOrb(Coords c) {
         SetCurrentTile(c);
         Coords moveTo = _selectedOrb.GetComponent<Orb>().Location;
@@ -80,7 +83,8 @@ public class Board : MonoBehaviour {
         _orbs[c.X, c.Y].GetComponent<Orb>().Location = moveTo;
 
         Vector2 direction = new Vector2(moveTo.X - c.X, moveTo.Y - c.Y);
-        if (direction == Vector2.left || direction == Vector2.down) {
+        if (direction == Vector2.left || direction == Vector2.down ||
+            direction == -Vector2.one || direction == _upLeft) {
             _orbs[c.X, c.Y].GetComponent<Orb>().Reverse = true;
             _ghostOrb.GetComponent<Orb>().Reverse = true;
         } else {

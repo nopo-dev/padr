@@ -72,6 +72,8 @@ public class Orb : MonoBehaviour {
 
     private float diagonalOffset = (float)Math.Sqrt(2) * 0.5f;
     private float quarterPi = (float)Math.PI * 0.25f;
+    private Vector2 _upLeft = Vector2.left + Vector2.up;
+    private Vector2 _downRight = Vector2.right + Vector2.down;
     public bool Reverse = false;
 
     private IEnumerator MoveOrb(Vector2 direction) {
@@ -80,42 +82,42 @@ public class Orb : MonoBehaviour {
         float tStart = 0f, tEnd = 0f;
         float xOffset = 0f, yOffset = 0f;
 
-        if (direction == Vector2.right || (direction == Vector2.left && Reverse)) {
+        if (direction == Vector2.right && !Reverse || (direction == Vector2.left && Reverse)) {
             tStart = quarterPi * -4f;
             tEnd = 0f;
             xOffset = (direction == Vector2.right) ? 1f : -1f;
-        } else if (direction == Vector2.up || (direction == Vector2.down && Reverse)) {
+        } else if (direction == Vector2.up && !Reverse || (direction == Vector2.down && Reverse)) {
             tStart = quarterPi * -2f;
             tEnd = -tStart;
             yOffset = (direction == Vector2.up) ? 1f : -1f;
-        } else if (direction == Vector2.left || (direction == Vector2.right && Reverse)) {
+        } else if (direction == Vector2.left && !Reverse || (direction == Vector2.right && Reverse)) {
             tStart = 0f;
             tEnd = quarterPi * 4f;
             xOffset = (direction == Vector2.right) ? 1f : -1f;
-        } else if (direction == Vector2.down || (direction == Vector2.up && Reverse)) {
+        } else if (direction == Vector2.down && !Reverse || (direction == Vector2.up && Reverse)) {
             tStart = quarterPi * 2f;
             tEnd = quarterPi * 6f;
             yOffset = (direction == Vector2.up) ? 1f : -1f;
-        } else if (direction == Vector2.one) {
+        } else if (direction == Vector2.one && !Reverse || (direction == -Vector2.one && Reverse)) {
             tStart = -quarterPi * 3f;
             tEnd = quarterPi;
-            xOffset = diagonalOffset;
-            yOffset = diagonalOffset;
-        } else if (direction == -Vector2.one) {
+            xOffset = (direction == Vector2.one) ? diagonalOffset : -diagonalOffset;
+            yOffset = (direction == Vector2.one) ? diagonalOffset : -diagonalOffset;
+        } else if (direction == -Vector2.one && !Reverse || (direction == Vector2.one && Reverse)) {
             tStart = quarterPi;
             tEnd = quarterPi * 5f;
-            xOffset = -diagonalOffset;
-            yOffset = -diagonalOffset;
-        } else if (direction == Vector2.left + Vector2.up) {
+            xOffset = (direction == Vector2.one) ? diagonalOffset : -diagonalOffset;
+            yOffset = (direction == Vector2.one) ? diagonalOffset : -diagonalOffset;
+        } else if (direction == _upLeft && !Reverse || (direction == _downRight && Reverse)) {
             tStart = -quarterPi;
             tEnd = quarterPi * 3f;
-            xOffset = -diagonalOffset;
-            yOffset = diagonalOffset;
-        } else if (direction == Vector2.right + Vector2.down) {
+            xOffset = (direction == _upLeft) ? -diagonalOffset : diagonalOffset;
+            yOffset = (direction == _upLeft) ? diagonalOffset : -diagonalOffset;
+        } else if (direction == _downRight && !Reverse || (direction == _upLeft && Reverse)) {
             tStart = quarterPi * 3f;
             tEnd = quarterPi * 7f;
-            xOffset = diagonalOffset;
-            yOffset = -diagonalOffset;
+            xOffset = (direction == _upLeft) ? -diagonalOffset : diagonalOffset;
+            yOffset = (direction == _upLeft) ? diagonalOffset : -diagonalOffset;
         }
 
         if (!Reverse)
