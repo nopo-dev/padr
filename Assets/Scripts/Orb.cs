@@ -12,7 +12,7 @@ public class Orb : MonoBehaviour {
     [SerializeField] private Vector3 _selectScale = new Vector3(1.2f, 1.2f, 1f);
     [SerializeField] private Vector3 _defaultScale = new Vector3(0.95f, 0.95f, 1f);
     [SerializeField] private float _trackingSpeed = 50f;
-    [SerializeField] private float _moveSpeed = 50f;
+    [SerializeField] private float _moveSpeed = 75f;
     public bool Selected {
         get { return _selected; }
         set {
@@ -70,8 +70,9 @@ public class Orb : MonoBehaviour {
         StartCoroutine(_moveCoroutine);
     }
 
-    private float diagonalOffset = 1f / (float)Math.Sqrt(2);
+    private float diagonalOffset = (float)Math.Sqrt(2) * 0.5f;
     private float quarterPi = (float)Math.PI * 0.25f;
+    public bool Reverse = false;
 
     private IEnumerator MoveOrb(Vector2 direction) {
         _isMoving = true;
@@ -79,22 +80,22 @@ public class Orb : MonoBehaviour {
         float tStart = 0f, tEnd = 0f;
         float xOffset = 0f, yOffset = 0f;
 
-        if (direction == Vector2.right) {
+        if (direction == Vector2.right || (direction == Vector2.left && Reverse)) {
             tStart = quarterPi * -4f;
             tEnd = 0f;
-            xOffset = 1f;
-        } else if (direction == Vector2.up) {
+            xOffset = (direction == Vector2.right) ? 1f : -1f;
+        } else if (direction == Vector2.up || (direction == Vector2.down && Reverse)) {
             tStart = quarterPi * -2f;
             tEnd = -tStart;
-            yOffset = 1f;
-        } else if (direction == Vector2.left) {
+            yOffset = (direction == Vector2.up) ? 1f : -1f;
+        } else if (direction == Vector2.left || (direction == Vector2.right && Reverse)) {
             tStart = 0f;
             tEnd = quarterPi * 4f;
-            xOffset = -1f;
-        } else if (direction == Vector2.down) {
+            xOffset = (direction == Vector2.right) ? 1f : -1f;
+        } else if (direction == Vector2.down || (direction == Vector2.up && Reverse)) {
             tStart = quarterPi * 2f;
             tEnd = quarterPi * 6f;
-            yOffset = -1f;
+            yOffset = (direction == Vector2.up) ? 1f : -1f;
         } else if (direction == Vector2.one) {
             tStart = -quarterPi * 3f;
             tEnd = quarterPi;
@@ -117,10 +118,19 @@ public class Orb : MonoBehaviour {
             yOffset = -diagonalOffset;
         }
 
-        for (float t = tStart; t <= tEnd; t += Time.deltaTime * _moveSpeed) {
-            transform.localPosition = new Vector2(startPos.x + 0.5f * ((float)Math.Cos(t) + xOffset),
-                startPos.y + 0.5f * ((float) Math.Sin(t) + yOffset));
-            yield return null;
+        if (!Reverse)
+        {
+            for (float t = tStart; t <= tEnd; t += Time.deltaTime * _moveSpeed) {
+                transform.localPosition = new Vector2(startPos.x + 0.5f * ((float)Math.Cos(t) + xOffset),
+                    startPos.y + 0.5f * ((float) Math.Sin(t) + yOffset));
+                yield return null;
+            }
+        } else {
+            for (float t = tEnd; t >= tStart; t -= Time.deltaTime * _moveSpeed) {
+                transform.localPosition = new Vector2(startPos.x + 0.5f * ((float)Math.Cos(t) + xOffset),
+                    startPos.y + 0.5f * ((float) Math.Sin(t) + yOffset));
+                yield return null;
+            }
         }
 
         transform.localPosition = _moveTo;

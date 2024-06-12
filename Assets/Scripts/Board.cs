@@ -78,10 +78,19 @@ public class Board : MonoBehaviour {
         Coords moveTo = _selectedOrb.GetComponent<Orb>().Location;
         _orbs[moveTo.X, moveTo.Y] = _orbs[c.X, c.Y];
         _orbs[c.X, c.Y].GetComponent<Orb>().Location = moveTo;
-        _orbs[c.X, c.Y].GetComponent<Orb>().Move(new Vector2(moveTo.X - c.X, moveTo.Y - c.Y));
+
+        Vector2 direction = new Vector2(moveTo.X - c.X, moveTo.Y - c.Y);
+        if (direction == Vector2.left || direction == Vector2.down) {
+            _orbs[c.X, c.Y].GetComponent<Orb>().Reverse = true;
+            _ghostOrb.GetComponent<Orb>().Reverse = true;
+        } else {
+            _orbs[c.X, c.Y].GetComponent<Orb>().Reverse = false;
+            _ghostOrb.GetComponent<Orb>().Reverse = false;
+        }
+        _orbs[c.X, c.Y].GetComponent<Orb>().Move(direction);
 
         _ghostOrb.GetComponent<Orb>().Location = c;
-        _ghostOrb.GetComponent<Orb>().Move(new Vector2(c.X - moveTo.X, c.Y - moveTo.Y));
+        _ghostOrb.GetComponent<Orb>().Move(-direction);
 
         _selectedOrb.GetComponent<Orb>().Location = c;
         _orbs[c.X, c.Y] = _selectedOrb;
