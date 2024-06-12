@@ -12,7 +12,7 @@ public class Orb : MonoBehaviour {
     [SerializeField] private Vector3 _selectScale = new Vector3(1.2f, 1.2f, 1f);
     [SerializeField] private Vector3 _defaultScale = new Vector3(0.95f, 0.95f, 1f);
     [SerializeField] private float _trackingSpeed = 50f;
-    [SerializeField] private float _moveSpeed = 75f;
+    [SerializeField] private float _moveSpeed = 25f;
     public bool Selected {
         get { return _selected; }
         set {

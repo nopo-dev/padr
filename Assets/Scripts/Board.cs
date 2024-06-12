@@ -47,7 +47,7 @@ public class Board : MonoBehaviour {
         _ghostOrb = Instantiate(_orbPrefabs[(int)_selectedOrb.GetComponent<Orb>().Type], transform);
         _ghostOrb.transform.localPosition = new Vector2((float)c.X, (float)c.Y);
         Color color = _ghostOrb.GetComponent<SpriteRenderer>().color;
-        color.a = 0.15f;
+        color.a = 0.25f;
         _ghostOrb.GetComponent<SpriteRenderer>().color = color;
     }
 
@@ -94,7 +94,8 @@ public class Board : MonoBehaviour {
         _orbs[c.X, c.Y].GetComponent<Orb>().Move(direction);
 
         _ghostOrb.GetComponent<Orb>().Location = c;
-        _ghostOrb.GetComponent<Orb>().Move(-direction);
+        //_ghostOrb.GetComponent<Orb>().Move(-direction);
+        _ghostOrb.transform.localPosition += new Vector3(-direction.x, -direction.y, 0);
 
         _selectedOrb.GetComponent<Orb>().Location = c;
         _orbs[c.X, c.Y] = _selectedOrb;
