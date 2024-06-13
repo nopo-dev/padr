@@ -207,6 +207,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _board: {fileID: 231362439}
+  _followerPrefab: {fileID: 6017992387277366648, guid: c2ad9eed5d08faf47beb814484c2f2eb, type: 3}
+  _followerSpeed: 25
 --- !u!4 &1462555525
 Transform:
   m_ObjectHideFlags: 0

@@ -56,7 +56,7 @@ public class Orb : MonoBehaviour {
         }
     }
 
-    public void Move(Vector2 direction) {
+    public void Move(Vector2 direction, bool arc) {
         _renderer.sortingOrder = 1;
         if (_isMoving && _moveCoroutine != null) {
             _isMoving = false;
@@ -66,8 +66,18 @@ public class Orb : MonoBehaviour {
         }
         _moveTo = new Vector2(transform.localPosition.x, transform.localPosition.y) + direction;
 
-        _moveCoroutine = MoveOrb(direction);
+        _moveCoroutine = arc ? MoveArc(direction) : MoveSlide(direction);
         StartCoroutine(_moveCoroutine);
+    }
+
+    private IEnumerator MoveSlide(Vector2 direction) {
+        _isMoving = true;
+
+        //yield return new WaitForSeconds((float)Math.PI * 0.5f / _moveSpeed);
+        yield return new WaitForSeconds(0.01f);
+
+        transform.localPosition += new Vector3(direction.x, direction.y, 0);
+        _isMoving = false;
     }
 
     private float diagonalOffset = (float)Math.Sqrt(2) * 0.5f;
@@ -76,7 +86,7 @@ public class Orb : MonoBehaviour {
     private Vector2 _downRight = Vector2.right + Vector2.down;
     public bool Reverse = false;
 
-    private IEnumerator MoveOrb(Vector2 direction) {
+    private IEnumerator MoveArc(Vector2 direction) {
         _isMoving = true;
         Vector2 startPos = transform.localPosition;
         float tStart = 0f, tEnd = 0f;
