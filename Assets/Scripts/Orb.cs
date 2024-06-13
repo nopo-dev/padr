@@ -35,8 +35,17 @@ public class Orb : MonoBehaviour {
     }
 
     public OrbType Type;
-
     public Coords Location;
+    public bool Matched {
+        get {
+            return false;
+        }
+        set {
+            if (value) {
+                Destroy(gameObject);
+            }
+        }
+    }
 
     private bool _selected;
     private bool _isMoving;

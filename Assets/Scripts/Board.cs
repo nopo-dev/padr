@@ -1,6 +1,6 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Board : MonoBehaviour {
@@ -71,6 +71,8 @@ public class Board : MonoBehaviour {
         _selectedOrb.transform.localPosition = new Vector2((float)currentPos.X, (float)currentPos.Y);
 
         Destroy(_ghostOrb);
+
+        CheckForMatches();
     }
 
     private Vector2 _upLeft = Vector2.left + Vector2.up;
@@ -111,7 +113,7 @@ public class Board : MonoBehaviour {
                 tile.GetComponent<BackgroundTile>().Location = new Coords(col, row);
                 _tiles[col, row] = tile;
 
-                int orbType = Random.Range(0, _orbPrefabs.Length);
+                int orbType = UnityEngine.Random.Range(0, _orbPrefabs.Length);
                 GameObject orb = Instantiate(_orbPrefabs[orbType], transform);
                 orb.GetComponent<Orb>().Type = (OrbType)orbType;
                 orb.transform.localPosition =  position;
@@ -120,5 +122,143 @@ public class Board : MonoBehaviour {
                 _orbs[col, row] = orb;
             }
         }
+    }
+
+    /*
+        todo: matches
+              combos
+              initial board fill (no matches)
+              skyfall (can have matches)
+
+              can tune orb movement + diagonal window a bit if needed
+    */
+
+    // detecting matches:
+    // an orb is part of a match if it is part of a set of orbs forming a row or column of
+    // at least 3 orbs. a set of connected orbs composed of multiple such rows / columns
+    // is counted as a single match
+
+    private int _combo;
+
+    // implementation could be optimized (lol)
+    private void CheckForMatches() {
+        _combo = 0;
+        //_orbMatched = new int[_width, _height];
+        //int[,] orbTypes = new int[_width, _height];
+
+        // iterate through every orb
+        for (int col = 0; col < _width; col++) {
+            for (int row = 0; row < _height; row++) {
+                FloodFill(col, row);
+                ValidateMatches();
+                DeleteMatches();
+            }
+        }
+    }
+
+    private void DeleteMatches() {
+        for (int col = 0; col < _width; col++) {
+            for (int row = 0; row < _height; row++) {
+                if (_orbMatched[col, row] == 1) {
+                    _orbs[col, row].GetComponent<Orb>().Matched = true;
+                }
+            }
+        }
+    }
+
+    private int[,] _orbMatched;
+    private bool[,] _orbVisited;
+    // mark blob of connected orbs (perhaps a match)
+    private void FloodFill(int col, int row) {
+        if (_orbs[col, row] == null)
+            return;
+
+        // type of current orb
+        OrbType t = _orbs[col, row].GetComponent<Orb>().Type;
+        _orbMatched = new int[_width, _height];
+        _orbVisited = new bool[_width, _height];
+
+        Queue<int[]> orbsToCheck = new Queue<int[]>();
+        int[] start = {col, row};
+        orbsToCheck.Enqueue(start);
+
+        _orbVisited[col, row] = true;
+
+        int[,] delta = {{1, 0}, {-1, 0},
+                        {0, 1}, {0, -1}};
+
+        while (orbsToCheck.Count != 0) {
+            int[] loc = orbsToCheck.Dequeue();
+            _orbMatched[loc[0], loc[1]] = 1;
+
+            for (int i = 0; i < 4; i++) {
+                int[] nextLoc = {loc[0] + delta[i, 0], loc[1] + delta[i, 1]};
+
+                if (IsConnected(nextLoc[0], nextLoc[1], t)) {
+                    _orbVisited[nextLoc[0], nextLoc[1]] = true;
+                    orbsToCheck.Enqueue(nextLoc);
+                }
+            }
+        }
+    }
+
+    private bool IsConnected(int col, int row, OrbType t) {
+        if (col < 0 || col >= _width || row < 0 || row >= _height)
+            return false;
+        if (_orbVisited[col, row])
+            return false;
+        if (_orbs[col, row].GetComponent<Orb>().Type != t)
+            return false;
+        
+        return true;
+    }
+
+    private void ValidateMatches() {
+        for (int col = 0; col < _width; col++) {
+            for (int row = 0; row < _height; row++) {
+                if (!IsValid(col, row)) {
+                    _orbMatched[col, row] = 0;
+                }
+            }
+        }
+    }
+
+    // check whether any given orb is a valid part of a match
+    private bool IsValid(int col, int row) {
+        // check up
+        int numStraight = 1;
+        for (int r = row + 1; r < _height; r++) {
+            if (_orbMatched[col, r] != 1) {
+                break;
+            }
+            numStraight++;
+            if (numStraight >= 3)   return true;
+        }
+        for (int r = row - 1; r >= 0; r--) {
+            if (_orbMatched[col, r] != 1) {
+                break;
+            }
+            numStraight++;
+            if (numStraight >= 3)   return true;
+        }
+
+        // check right
+        numStraight = 1;
+        for (int c = col + 1; c < _width; c++) {
+            if (_orbMatched[c, row] != 1) {
+                break;
+            }
+            numStraight++;
+            if (numStraight >= 3)   return true;
+        }
+        for (int c = col - 1; c >= 0; c--) {
+            if (_orbMatched[c, row] != 1) {
+                break;
+            }
+            numStraight++;
+            if (numStraight >= 3)   return true;
+        }
+
+        return false;
     }
 }

@@ -64,10 +64,4 @@ public class InputController : MonoBehaviour {
             }
         }
     }
-
-    // todo: lock orb movement to board
-    //       move orbs according to selected orb, not cursor
-    //       cap orb movement speed 
-
-    // todo: matches and combos
 }
