@@ -150,51 +150,62 @@ public class Board : MonoBehaviour {
         for (int col = 0; col < _width; col++) {
             for (int row = 0; row < _height; row++) {
                 FloodFill(col, row);
-                ValidateMatches();
                 DeleteMatches();
             }
         }
+
+        Debug.Log(_combo + " combo");
     }
 
     private void DeleteMatches() {
+        int numConnected = 0;
         for (int col = 0; col < _width; col++) {
             for (int row = 0; row < _height; row++) {
                 if (_orbMatched[col, row] == 1) {
                     _orbs[col, row].GetComponent<Orb>().Matched = true;
+                    numConnected++;
                 }
             }
+        }
+        if (numConnected != 0) {
+            _combo++;
+            //Debug.Log(_combo + " combo\n" + numConnected + " orbs");
         }
     }
 
     private int[,] _orbMatched;
     private bool[,] _orbVisited;
-    // mark blob of connected orbs (perhaps a match)
-    private void FloodFill(int col, int row) {
-        if (_orbs[col, row] == null)
-            return;
 
-        // type of current orb
-        OrbType t = _orbs[col, row].GetComponent<Orb>().Type;
+    // flood fill, queue connected orbs if they are valid matches
+    private void FloodFill(int col, int row) {
         _orbMatched = new int[_width, _height];
         _orbVisited = new bool[_width, _height];
 
+        if (_orbs[col, row] == null)
+            return;
+
+        OrbType t = _orbs[col, row].GetComponent<Orb>().Type;
+        if (!IsValid(col, row, t) || _orbs[col, row].GetComponent<Orb>().Matched == true)
+            return;
+        
         Queue<int[]> orbsToCheck = new Queue<int[]>();
         int[] start = {col, row};
         orbsToCheck.Enqueue(start);
-
         _orbVisited[col, row] = true;
 
-        int[,] delta = {{1, 0}, {-1, 0},
-                        {0, 1}, {0, -1}};
+        int[,] delta = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
+
+        int checkedOrbs = 0;
 
         while (orbsToCheck.Count != 0) {
             int[] loc = orbsToCheck.Dequeue();
+            checkedOrbs++;
             _orbMatched[loc[0], loc[1]] = 1;
 
             for (int i = 0; i < 4; i++) {
                 int[] nextLoc = {loc[0] + delta[i, 0], loc[1] + delta[i, 1]};
 
-                if (IsConnected(nextLoc[0], nextLoc[1], t)) {
+                if (IsConnected(nextLoc[0], nextLoc[1], t) && IsValid(nextLoc[0], nextLoc[1], t)) {
                     _orbVisited[nextLoc[0], nextLoc[1]] = true;
                     orbsToCheck.Enqueue(nextLoc);
                 }
@@ -202,6 +213,7 @@ public class Board : MonoBehaviour {
         }
     }
 
+    // check if next orb is connected
     private bool IsConnected(int col, int row, OrbType t) {
         if (col < 0 || col >= _width || row < 0 || row >= _height)
             return false;
@@ -213,46 +225,37 @@ public class Board : MonoBehaviour {
         return true;
     }
 
-    private void ValidateMatches() {
-        for (int col = 0; col < _width; col++) {
-            for (int row = 0; row < _height; row++) {
-                if (!IsValid(col, row)) {
-                    _orbMatched[col, row] = 0;
-                }
-            }
-        }
-    }
-
     // check whether any given orb is a valid part of a match
-    private bool IsValid(int col, int row) {
-        // check up
+    // (must be connected in a horiz. or vert. line to 2+ orbs of the same type)
+    private bool IsValid(int col, int row, OrbType t) {
+        // check vertical
         int numStraight = 1;
         for (int r = row + 1; r < _height; r++) {
-            if (_orbMatched[col, r] != 1) {
+            if (_orbs[col, r].GetComponent<Orb>().Type != t) {
                 break;
             }
             numStraight++;
             if (numStraight >= 3)   return true;
         }
         for (int r = row - 1; r >= 0; r--) {
-            if (_orbMatched[col, r] != 1) {
+            if (_orbs[col, r].GetComponent<Orb>().Type != t) {
                 break;
             }
             numStraight++;
             if (numStraight >= 3)   return true;
         }
 
-        // check right
+        // check horizontal
         numStraight = 1;
         for (int c = col + 1; c < _width; c++) {
-            if (_orbMatched[c, row] != 1) {
+            if (_orbs[c, row].GetComponent<Orb>().Type != t) {
                 break;
             }
             numStraight++;
             if (numStraight >= 3)   return true;
         }
         for (int c = col - 1; c >= 0; c--) {
-            if (_orbMatched[c, row] != 1) {
+            if (_orbs[c, row].GetComponent<Orb>().Type != t) {
                 break;
             }
             numStraight++;
