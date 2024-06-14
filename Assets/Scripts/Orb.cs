@@ -45,8 +45,10 @@ public class Orb : MonoBehaviour {
                 _renderer = GetComponent<SpriteRenderer>();
             switch(_state) {
                 case OrbState.Spawnfall:
+                    Fall();
                     break;
                 case OrbState.Skyfall:
+                    Fall();
                     break;
                 case OrbState.Selected: {
                     transform.localScale = _selectScale;
@@ -98,6 +100,7 @@ public class Orb : MonoBehaviour {
             _renderer.color = c;
             yield return null;
         }
+        Destroy(gameObject);
     }
 
     private bool _isMoving;
@@ -197,15 +200,23 @@ public class Orb : MonoBehaviour {
         _isMoving = false;
     }
 
+    public float FallSpeed {
+        get { return _fallSpeed; }
+        set { _fallSpeed = value; }
+    }
     [SerializeField] private float _fallSpeed;
-    private void FallTo(float yPosition) {
-        StartCoroutine(Fall(yPosition));
+    private void Fall() {
+        StartCoroutine(FallTo(Location.Y));
     }
 
-    private IEnumerator Fall(float yPosition) {
-        for (float y = transform.localPosition.y; y >= yPosition; y -= _fallSpeed * Time.deltaTime) {
+    private IEnumerator FallTo(float yPosition) {
+        float adjustedFallSpeed = _fallSpeed * (transform.localPosition.y - yPosition);
+        for (float y = transform.localPosition.y; y >= yPosition; y -= adjustedFallSpeed * Time.deltaTime) {
             transform.localPosition = new Vector3(transform.localPosition.x, y, 0);
             yield return null;
         }
+
+        transform.localPosition = new Vector3(transform.localPosition.x, yPosition, 0);
+        State = OrbState.Unmatched;
     }
 }

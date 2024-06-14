@@ -20,7 +20,14 @@ public struct Coords {
 
 public class BackgroundTile : MonoBehaviour {
 
+    [SerializeField] private Sprite _bg0;
+    [SerializeField] private Sprite _bg1;
+
     public Coords Location;
+
+    public void SetSprite() {
+        GetComponent<SpriteRenderer>().sprite = (Location.X + Location.Y) % 2 == 0 ? _bg0 : _bg1;
+    }
 
     public void SetCollider(bool state) {
         gameObject.GetComponent<PolygonCollider2D>().enabled = state;

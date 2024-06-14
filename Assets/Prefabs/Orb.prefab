@@ -105,5 +105,7 @@ MonoBehaviour:
   Location:
     X: 0
     Y: 0
+  _state: 0
   _fadeSpeed: 3
   Reverse: 0
+  _fallSpeed: 3

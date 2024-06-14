@@ -111,22 +111,67 @@ public class Board : MonoBehaviour {
     private void InitializeGrid() {
         for (int col = 0; col < _width; col++) {
             for (int row = 0; row < _height; row++) {
-                Vector2 position = new Vector2((float)col, (float)row);
-                GameObject tile = Instantiate(_tilePrefab, transform);
-                tile.transform.localPosition =  position;
-                tile.transform.localRotation = Quaternion.identity;
-                tile.GetComponent<BackgroundTile>().Location = new Coords(col, row);
-                _tiles[col, row] = tile;
-
-                int orbType = UnityEngine.Random.Range(0, _orbPrefabs.Length);
-                GameObject orb = Instantiate(_orbPrefabs[orbType], transform);
-                orb.GetComponent<Orb>().Type = (OrbType)orbType;
-                orb.transform.localPosition =  position;
-                orb.transform.localRotation = Quaternion.identity;
-                orb.GetComponent<Orb>().Location = new Coords(col, row);
-                _orbs[col, row] = orb;
+                PlaceTile(col, row);
+                SpawnRandomOrb(col, row);
             }
         }
+    }
+
+    private void PlaceTile(int col, int row) {
+        Vector2 position = new Vector2((float)col, (float)row);
+
+        GameObject tile = Instantiate(_tilePrefab, transform);
+        tile.transform.localPosition = position;
+        tile.transform.localRotation = Quaternion.identity;
+        tile.GetComponent<BackgroundTile>().Location = new Coords(col, row);
+        tile.GetComponent<BackgroundTile>().SetSprite();
+        _tiles[col, row] = tile;
+    }
+
+    private void SpawnRandomOrb(int col, int row) {
+        Vector2 position = new Vector2((float)col, (float)row);
+        int orbType = UnityEngine.Random.Range(0, _orbPrefabs.Length);
+        
+        GameObject orb = Instantiate(_orbPrefabs[orbType], transform);
+        orb.GetComponent<Orb>().Type = (OrbType)orbType;
+        orb.GetComponent<Orb>().Location = new Coords(col, row);
+        position.y = GetLowestSpawnPos(col);
+        _orbs[col, row] = orb;
+        orb.transform.localPosition = position;
+        orb.transform.localRotation = Quaternion.identity;
+        orb.GetComponent<Orb>().State = OrbState.Skyfall;
+    }
+
+    private int _lastCol;
+    private int _numSpawnedInCol;
+    private float GetLowestSpawnPos(int col) {
+        if (_lastCol != col)
+            _numSpawnedInCol = 0;
+        _lastCol = col;
+        for (int row = 0; row < _height; row++) {
+            if (_orbs[col, row] == null) {
+                _numSpawnedInCol++;
+                return (float)_height + _numSpawnedInCol - 1;
+            }
+        }
+        return -1f;
+    }
+    
+    private void SpawnSkyfall() {
+        for (int col = 0; col < _width; col++) {
+            for (int row = 0; row < _height; row++) {
+                if (_orbs[col, row] == null) {
+                    SpawnRandomOrb(col, row);
+                }
+            }
+        }
+        StartCoroutine(CheckMatchesAfterSkyfall());
+    }
+
+    private IEnumerator CheckMatchesAfterSkyfall() {
+        yield return new WaitForSeconds(1f / _orbs[0, 0].GetComponent<Orb>().FallSpeed + 0.1f);
+        _shouldSkyfall = false;
+        StartCoroutine(CheckMatches());
     }
 
     /*
@@ -143,26 +188,33 @@ public class Board : MonoBehaviour {
     // at least 3 orbs. a set of connected orbs composed of multiple such rows / columns
     // is counted as a single match
 
+    // check matches every time skyfall finishes
+
     private int _combo;
     private float _fadeTime;
     private void CheckForMatches() {
         _combo = 0;
+        _shouldSkyfall = false;
         StartCoroutine(CheckMatches());
     }
-
+    
+    private bool _shouldSkyfall;
     private IEnumerator CheckMatches() {
         for (int row = 0; row < _height; row++) {
             for (int col = 0; col < _width; col++) {
                 FloodFill(col, row);
                 if (_matched) {
+                    _shouldSkyfall = true;
                     DeleteMatches();
-                    Debug.Log(_combo + " combo");
+                    //Debug.Log(_combo + " combo");
                     yield return new WaitForSeconds(_fadeTime + 0.1f);
                 } else {
                     yield return null;
                 }
             }
         }
+        UpdateUnmatchedOrbs();
+        if (_shouldSkyfall) SpawnSkyfall();
     }
 
     private void DeleteMatches() {
@@ -171,12 +223,32 @@ public class Board : MonoBehaviour {
             for (int row = 0; row < _height; row++) {
                 if (_orbMatched[col, row] == 1) {
                     _orbs[col, row].GetComponent<Orb>().State = OrbState.Matched;
+                    //_orbs[col, row] = null;
                     numConnected++;
                 }
             }
         }
         _combo++;
         //Debug.Log(_combo + " combo\n" + numConnected + " orbs");
+    }
+
+    private void UpdateUnmatchedOrbs() {
+        for (int col = 0; col < _width; col++) {
+            int numMatchedInCol = 0;
+            for (int row = 0; row < _height; row++) {
+                if (_orbs[col, row] == null) {
+                    numMatchedInCol++;
+                } else {
+                    if (numMatchedInCol == 0) continue;
+                    _orbs[col, row].GetComponent<Orb>().Location.Y -= numMatchedInCol;
+                    Coords newLoc = _orbs[col, row].GetComponent<Orb>().Location;
+
+                    _orbs[newLoc.X, newLoc.Y] = _orbs[col, row];
+                    _orbs[col, row] = null;
+                    _orbs[newLoc.X, newLoc.Y].GetComponent<Orb>().State = OrbState.Skyfall;
+                }
+            }
+        }
     }
 
     private int[,] _orbMatched;
@@ -225,6 +297,8 @@ public class Board : MonoBehaviour {
             return false;
         if (_orbVisited[col, row])
             return false;
+        if (_orbs[col, row] == null)
+            return false;
         if (_orbs[col, row].GetComponent<Orb>().Type != t)
             return false;
         
@@ -237,35 +311,35 @@ public class Board : MonoBehaviour {
         // check vertical
         int numStraight = 1;
         for (int r = row + 1; r < _height; r++) {
-            if (_orbs[col, r].GetComponent<Orb>().Type != t) {
-                break;
-            }
+            if (_orbs[col, r] == null)  break;
+            if (_orbs[col, r].GetComponent<Orb>().Type != t) break;
             numStraight++;
-            if (numStraight >= 3)   return true;
+            if (numStraight >= 3)
+                return true;
         }
         for (int r = row - 1; r >= 0; r--) {
-            if (_orbs[col, r].GetComponent<Orb>().Type != t) {
-                break;
-            }
+            if (_orbs[col, r] == null)  break;
+            if (_orbs[col, r].GetComponent<Orb>().Type != t) break;
             numStraight++;
-            if (numStraight >= 3)   return true;
+            if (numStraight >= 3)
+                return true;
         }
 
         // check horizontal
         numStraight = 1;
         for (int c = col + 1; c < _width; c++) {
-            if (_orbs[c, row].GetComponent<Orb>().Type != t) {
-                break;
-            }
+            if (_orbs[c, row] == null)  break;
+            if (_orbs[c, row].GetComponent<Orb>().Type != t) break;
             numStraight++;
-            if (numStraight >= 3)   return true;
+            if (numStraight >= 3)
+                return true;
         }
         for (int c = col - 1; c >= 0; c--) {
-            if (_orbs[c, row].GetComponent<Orb>().Type != t) {
-                break;
-            }
+            if (_orbs[c, row] == null)  break;
+            if (_orbs[c, row].GetComponent<Orb>().Type != t) break;
             numStraight++;
-            if (numStraight >= 3)   return true;
+            if (numStraight >= 3)
+                return true;
         }
 
         return false;
