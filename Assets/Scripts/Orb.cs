@@ -7,67 +7,102 @@ public enum OrbType {
     Red, Green, Blue, Yellow, Purple, Gray
 }
 
+public enum OrbState {
+    Spawnfall = 1, Skyfall = 2, Selected = 3, Unmatched = 4, Matched = 5, Ghost = 6
+}
+
 public class Orb : MonoBehaviour {
 
     [SerializeField] private Vector3 _selectScale = new Vector3(1.2f, 1.2f, 1f);
     [SerializeField] private Vector3 _defaultScale = new Vector3(0.95f, 0.95f, 1f);
     [SerializeField] private float _trackingSpeed = 50f;
     [SerializeField] private float _moveSpeed = 25f;
-    public bool Selected {
-        get { return _selected; }
-        set {
-            _selected = value;
-            if (_selected) {
-                transform.localScale = _selectScale;
-                _renderer.sortingOrder = 2;
-                Color c = _renderer.color;
-                c.a = 0.7f;
-                _renderer.color = c;
-            } else {
-                transform.localScale = _defaultScale;
-                // if (_renderer == null)  _renderer = GetComponent<SpriteRenderer>();
-                _renderer.sortingOrder = 0;
-                Color c = _renderer.color;
-                c.a = 1f;
-                _renderer.color = c;
-            }
-        }
-    }
 
-    public OrbType Type;
-    public Coords Location;
-    public bool Matched {
-        get {
-            return _matched;
-        }
-        set {
-            _matched = value;
-            if (_matched) {
-                Destroy(gameObject);
-            }
-        }
-    }
-
-    private bool _matched = false;
-
-    private bool _selected;
-    private bool _isMoving;
-    private Vector2 _moveTo;
-    private IEnumerator _moveCoroutine;
     private SpriteRenderer _renderer;
 
     private void Start() {
-        _selected = false;
+        if (_state == 0)
+            State = OrbState.Unmatched;
         _renderer = GetComponent<SpriteRenderer>();
     }
 
     private void Update() {
-        if (_selected) {
+        if (State == OrbState.Selected) {
             transform.position = Vector2.Lerp(transform.position, 
                 Camera.main.ScreenToWorldPoint(Input.mousePosition), Time.deltaTime * _trackingSpeed);
         }
     }
 
+    public OrbType Type;
+    public Coords Location;
+    public OrbState State {
+        get {
+            return _state;
+        }
+        set {
+            _state = value;
+            if (_renderer == null)
+                _renderer = GetComponent<SpriteRenderer>();
+            switch(_state) {
+                case OrbState.Spawnfall:
+                    break;
+                case OrbState.Skyfall:
+                    break;
+                case OrbState.Selected: {
+                    transform.localScale = _selectScale;
+                    _renderer.sortingOrder = 2;
+                    Color c = _renderer.color;
+                    c.a = 0.7f;
+                    _renderer.color = c;
+                    break;
+                }
+                case OrbState.Unmatched: {
+                    transform.localScale = _defaultScale;
+                    _renderer.sortingOrder = 0;
+                    Color c = _renderer.color;
+                    c.a = 1f;
+                    _renderer.color = c;
+                    break;
+                }
+                case OrbState.Matched:
+                    StartCoroutine(Match());
+                    break;
+                case OrbState.Ghost: {
+                    transform.localScale = _defaultScale;
+                    _renderer.sortingOrder = 0;
+                    Color c = _renderer.color;
+                    c.a = 0.25f;
+                    _renderer.color = c;
+                    break;
+                }
+            }
+        }
+    }
+    [SerializeField]
+    private OrbState _state;
+
+    public float FadeSpeed {
+        get {
+            return _fadeSpeed;
+        }
+        set {
+            _fadeSpeed = value;
+        }
+    }
+    [SerializeField] private float _fadeSpeed = 3f;
+    // fade out when matched
+    private IEnumerator Match() {
+        Color c = _renderer.color;
+        for (float a = 1f; a >= 0f; a -= Time.deltaTime * _fadeSpeed) {
+            c.a = a;
+            _renderer.color = c;
+            yield return null;
+        }
+    }
+
+    private bool _isMoving;
+    private Vector2 _moveTo;
+    private IEnumerator _moveCoroutine;
     public void Move(Vector2 direction, bool arc) {
         _renderer.sortingOrder = 1;
         if (_isMoving && _moveCoroutine != null) {
@@ -162,7 +197,15 @@ public class Orb : MonoBehaviour {
         _isMoving = false;
     }
 
-    private IEnumerator MoveUp() {
-        yield return null;
+    [SerializeField] private float _fallSpeed;
+    private void FallTo(float yPosition) {
+        StartCoroutine(Fall(yPosition));
+    }
+
+    private IEnumerator Fall(float yPosition) {
+        for (float y = transform.localPosition.y; y >= yPosition; y -= _fallSpeed * Time.deltaTime) {
+            transform.localPosition = new Vector3(transform.localPosition.x, y, 0);
+            yield return null;
+        }
     }
 }

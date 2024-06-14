@@ -32,11 +32,12 @@ public class Board : MonoBehaviour {
         _tiles = new GameObject[_width, _height];
         _orbs = new GameObject[_width, _height];
         InitializeGrid();
+        _fadeTime = 1f / _orbs[0, 0].GetComponent<Orb>().FadeSpeed;
     }
 
     public void SelectOrb(Coords c) {
         _selectedOrb = _orbs[c.X, c.Y];
-        _selectedOrb.GetComponent<Orb>().Selected = true;
+        _selectedOrb.GetComponent<Orb>().State = OrbState.Selected;
         OrbSelected = true;
         SetCurrentTile(c);
 
@@ -46,9 +47,8 @@ public class Board : MonoBehaviour {
     private void CreateGhostOrb(Coords c) {
         _ghostOrb = Instantiate(_orbPrefabs[(int)_selectedOrb.GetComponent<Orb>().Type], transform);
         _ghostOrb.transform.localPosition = new Vector2((float)c.X, (float)c.Y);
-        Color color = _ghostOrb.GetComponent<SpriteRenderer>().color;
-        color.a = 0.25f;
-        _ghostOrb.GetComponent<SpriteRenderer>().color = color;
+        
+        _ghostOrb.GetComponent<Orb>().State = OrbState.Ghost;
     }
 
     private void SetCurrentTile(Coords c) {
@@ -61,7 +61,7 @@ public class Board : MonoBehaviour {
 
     public void DeselectOrb() {
         if (_selectedOrb == null)   return;
-        _selectedOrb.GetComponent<Orb>().Selected = false;
+        _selectedOrb.GetComponent<Orb>().State = OrbState.Unmatched;
         OrbSelected = false;
         
         _currentTile.GetComponent<BackgroundTile>().SetCollider(true);
@@ -72,12 +72,17 @@ public class Board : MonoBehaviour {
 
         Destroy(_ghostOrb);
 
-        CheckForMatches();
+        if (_orbMoved) {
+            CheckForMatches();
+            _orbMoved = false;
+        }
     }
 
+    private bool _orbMoved = false;
     private Vector2 _upLeft = Vector2.left + Vector2.up;
 
     public void MoveOrb(Coords c) {
+        _orbMoved = true;
         SetCurrentTile(c);
         Coords moveTo = _selectedOrb.GetComponent<Orb>().Location;
         _orbs[moveTo.X, moveTo.Y] = _orbs[c.X, c.Y];
@@ -139,22 +144,25 @@ public class Board : MonoBehaviour {
     // is counted as a single match
 
     private int _combo;
-
-    // implementation could be optimized (lol)
+    private float _fadeTime;
     private void CheckForMatches() {
         _combo = 0;
-        //_orbMatched = new int[_width, _height];
-        //int[,] orbTypes = new int[_width, _height];
+        StartCoroutine(CheckMatches());
+    }
 
-        // iterate through every orb
-        for (int col = 0; col < _width; col++) {
-            for (int row = 0; row < _height; row++) {
+    private IEnumerator CheckMatches() {
+        for (int row = 0; row < _height; row++) {
+            for (int col = 0; col < _width; col++) {
                 FloodFill(col, row);
-                DeleteMatches();
+                if (_matched) {
+                    DeleteMatches();
+                    Debug.Log(_combo + " combo");
+                    yield return new WaitForSeconds(_fadeTime + 0.1f);
+                } else {
+                    yield return null;
+                }
             }
         }
-
-        Debug.Log(_combo + " combo");
     }
 
     private void DeleteMatches() {
@@ -162,32 +170,33 @@ public class Board : MonoBehaviour {
         for (int col = 0; col < _width; col++) {
             for (int row = 0; row < _height; row++) {
                 if (_orbMatched[col, row] == 1) {
-                    _orbs[col, row].GetComponent<Orb>().Matched = true;
+                    _orbs[col, row].GetComponent<Orb>().State = OrbState.Matched;
                     numConnected++;
                 }
             }
         }
-        if (numConnected != 0) {
-            _combo++;
-            //Debug.Log(_combo + " combo\n" + numConnected + " orbs");
-        }
+        _combo++;
+        //Debug.Log(_combo + " combo\n" + numConnected + " orbs");
     }
 
     private int[,] _orbMatched;
     private bool[,] _orbVisited;
+    private bool _matched;
 
     // flood fill, queue connected orbs if they are valid matches
     private void FloodFill(int col, int row) {
         _orbMatched = new int[_width, _height];
         _orbVisited = new bool[_width, _height];
+        _matched = false;
 
         if (_orbs[col, row] == null)
             return;
 
         OrbType t = _orbs[col, row].GetComponent<Orb>().Type;
-        if (!IsValid(col, row, t) || _orbs[col, row].GetComponent<Orb>().Matched == true)
+        if (!IsValid(col, row, t) || _orbs[col, row].GetComponent<Orb>().State == OrbState.Matched)
             return;
         
+        _matched = true;
         Queue<int[]> orbsToCheck = new Queue<int[]>();
         int[] start = {col, row};
         orbsToCheck.Enqueue(start);
@@ -195,11 +204,8 @@ public class Board : MonoBehaviour {
 
         int[,] delta = {{1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 
-        int checkedOrbs = 0;
-
         while (orbsToCheck.Count != 0) {
             int[] loc = orbsToCheck.Dequeue();
-            checkedOrbs++;
             _orbMatched[loc[0], loc[1]] = 1;
 
             for (int i = 0; i < 4; i++) {
