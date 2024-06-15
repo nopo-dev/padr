@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum BoardState {
+    Interactable, Uninteractable
+}
+
 public class Board : MonoBehaviour {
 
     [SerializeField] private GameObject _tilePrefab;
@@ -27,14 +31,24 @@ public class Board : MonoBehaviour {
     private GameObject _ghostOrb;
 
     public bool OrbSelected;
+    public BoardState State;
 
     private void Start() {
         _tiles = new GameObject[_width, _height];
         _orbs = new GameObject[_width, _height];
         InitializeGrid();
+        State = BoardState.Uninteractable;
         _fadeTime = 1f / _orbs[0, 0].GetComponent<Orb>().FadeSpeed;
+        _fallTime = 1f / _orbs[0, 0].GetComponent<Orb>().FallSpeed;
+        StartCoroutine(DelayAllowInteraction());
     }
 
+    private IEnumerator DelayAllowInteraction() {
+        yield return new WaitForSeconds(_fallTime + 0.1f);
+        State = BoardState.Interactable;
+    }
+
+    private float _fallTime;
     public void SelectOrb(Coords c) {
         _selectedOrb = _orbs[c.X, c.Y];
         _selectedOrb.GetComponent<Orb>().State = OrbState.Selected;
@@ -112,7 +126,7 @@ public class Board : MonoBehaviour {
         for (int col = 0; col < _width; col++) {
             for (int row = 0; row < _height; row++) {
                 PlaceTile(col, row);
-                SpawnRandomOrb(col, row);
+                SpawnRandomOrb(col, row, false);
             }
         }
     }
@@ -128,13 +142,25 @@ public class Board : MonoBehaviour {
         _tiles[col, row] = tile;
     }
 
-    private void SpawnRandomOrb(int col, int row) {
+    // needs to be optimized when not allowing matches, currently stuck in
+    // while loop for a little too long when generating initial board
+    private void SpawnRandomOrb(int col, int row, bool allowMatches) {
         Vector2 position = new Vector2((float)col, (float)row);
         int orbType = UnityEngine.Random.Range(0, _orbPrefabs.Length);
         
         GameObject orb = Instantiate(_orbPrefabs[orbType], transform);
         orb.GetComponent<Orb>().Type = (OrbType)orbType;
         orb.GetComponent<Orb>().Location = new Coords(col, row);
+        if (!allowMatches) {
+            while (IsValid(col, row, orb.GetComponent<Orb>().Type)) {
+                orb.GetComponent<Orb>().Type = (OrbType)UnityEngine.Random.Range(0, 5);
+            }
+            orbType = (int)orb.GetComponent<Orb>().Type;
+            Destroy(orb);
+            orb = Instantiate(_orbPrefabs[orbType], transform);
+            orb.GetComponent<Orb>().Type = (OrbType)orbType;
+            orb.GetComponent<Orb>().Location = new Coords(col, row);
+        }
         position.y = GetLowestSpawnPos(col);
         _orbs[col, row] = orb;
         orb.transform.localPosition = position;
@@ -161,7 +187,7 @@ public class Board : MonoBehaviour {
         for (int col = 0; col < _width; col++) {
             for (int row = 0; row < _height; row++) {
                 if (_orbs[col, row] == null) {
-                    SpawnRandomOrb(col, row);
+                    SpawnRandomOrb(col, row, true);
                 }
             }
         }
@@ -169,7 +195,7 @@ public class Board : MonoBehaviour {
     }
 
     private IEnumerator CheckMatchesAfterSkyfall() {
-        yield return new WaitForSeconds(1f / _orbs[0, 0].GetComponent<Orb>().FallSpeed + 0.1f);
+        yield return new WaitForSeconds(_fallTime + 0.1f);
         _shouldSkyfall = false;
         StartCoroutine(CheckMatches());
     }
@@ -204,9 +230,10 @@ public class Board : MonoBehaviour {
             for (int col = 0; col < _width; col++) {
                 FloodFill(col, row);
                 if (_matched) {
+                    State = BoardState.Uninteractable;
                     _shouldSkyfall = true;
                     DeleteMatches();
-                    //Debug.Log(_combo + " combo");
+                    Debug.Log(_combo + " combo");
                     yield return new WaitForSeconds(_fadeTime + 0.1f);
                 } else {
                     yield return null;
@@ -215,6 +242,7 @@ public class Board : MonoBehaviour {
         }
         UpdateUnmatchedOrbs();
         if (_shouldSkyfall) SpawnSkyfall();
+        else State = BoardState.Interactable;
     }
 
     private void DeleteMatches() {
@@ -223,7 +251,6 @@ public class Board : MonoBehaviour {
             for (int row = 0; row < _height; row++) {
                 if (_orbMatched[col, row] == 1) {
                     _orbs[col, row].GetComponent<Orb>().State = OrbState.Matched;
-                    //_orbs[col, row] = null;
                     numConnected++;
                 }
             }

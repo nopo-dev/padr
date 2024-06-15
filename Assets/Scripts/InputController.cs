@@ -40,6 +40,8 @@ public class InputController : MonoBehaviour {
     }
 
     private void Update() {
+        if (_board.State == BoardState.Uninteractable)
+            return;
         if (_follower != null && Input.GetMouseButton(0)) {
             MoveFollower();
         }
