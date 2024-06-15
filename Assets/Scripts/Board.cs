@@ -13,6 +13,7 @@ public class Board : MonoBehaviour {
     [SerializeField] private int _width;
     [SerializeField] private int _height;
     [SerializeField] private GameObject[] _orbPrefabs;
+    [SerializeField] private UIManager _uiManager;
 
     public int Width {
         get { return _width; }
@@ -200,27 +201,12 @@ public class Board : MonoBehaviour {
         StartCoroutine(CheckMatches());
     }
 
-    /*
-        todo: matches
-              combos
-              initial board fill (no matches)
-              skyfall (can have matches)
-
-              can tune orb movement + diagonal window a bit if needed
-    */
-
-    // detecting matches:
-    // an orb is part of a match if it is part of a set of orbs forming a row or column of
-    // at least 3 orbs. a set of connected orbs composed of multiple such rows / columns
-    // is counted as a single match
-
-    // check matches every time skyfall finishes
-
     private int _combo;
     private float _fadeTime;
     private void CheckForMatches() {
         _combo = 0;
         _shouldSkyfall = false;
+        _uiManager.ResetTextFields();
         StartCoroutine(CheckMatches());
     }
     
@@ -233,7 +219,6 @@ public class Board : MonoBehaviour {
                     State = BoardState.Uninteractable;
                     _shouldSkyfall = true;
                     DeleteMatches();
-                    Debug.Log(_combo + " combo");
                     yield return new WaitForSeconds(_fadeTime + 0.1f);
                 } else {
                     yield return null;
@@ -247,16 +232,19 @@ public class Board : MonoBehaviour {
 
     private void DeleteMatches() {
         int numConnected = 0;
+        OrbType t = 0;
         for (int col = 0; col < _width; col++) {
             for (int row = 0; row < _height; row++) {
                 if (_orbMatched[col, row] == 1) {
+                    t = _orbs[col, row].GetComponent<Orb>().Type;
                     _orbs[col, row].GetComponent<Orb>().State = OrbState.Matched;
                     numConnected++;
                 }
             }
         }
         _combo++;
-        //Debug.Log(_combo + " combo\n" + numConnected + " orbs");
+        _uiManager.UpdateTextField(TextField.Combo, _combo);
+        _uiManager.UpdateTextField((TextField)((int)t + 1), numConnected);
     }
 
     private void UpdateUnmatchedOrbs() {
