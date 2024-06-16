@@ -45,7 +45,7 @@ public class Board : MonoBehaviour {
     }
 
     private IEnumerator DelayAllowInteraction() {
-        yield return new WaitForSeconds(_fallTime + 0.1f);
+        yield return new WaitForSeconds(_fallTime + 0.05f);
         State = BoardState.Interactable;
     }
 
@@ -196,7 +196,7 @@ public class Board : MonoBehaviour {
     }
 
     private IEnumerator CheckMatchesAfterSkyfall() {
-        yield return new WaitForSeconds(_fallTime + 0.1f);
+        yield return new WaitForSeconds(_fallTime + 0.05f);
         _shouldSkyfall = false;
         StartCoroutine(CheckMatches());
     }
@@ -219,7 +219,7 @@ public class Board : MonoBehaviour {
                     State = BoardState.Uninteractable;
                     _shouldSkyfall = true;
                     DeleteMatches();
-                    yield return new WaitForSeconds(_fadeTime + 0.1f);
+                    yield return new WaitForSeconds(_fadeTime + 0.05f);
                 } else {
                     yield return null;
                 }
