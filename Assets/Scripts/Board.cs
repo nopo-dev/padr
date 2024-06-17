@@ -14,6 +14,7 @@ public class Board : MonoBehaviour {
     [SerializeField] private int _height;
     [SerializeField] private GameObject[] _orbPrefabs;
     [SerializeField] private UIManager _uiManager;
+    [SerializeField] private CombatManager _combatManager;
 
     public int Width {
         get { return _width; }
@@ -60,7 +61,7 @@ public class Board : MonoBehaviour {
     }
 
     private void CreateGhostOrb(Coords c) {
-        _ghostOrb = Instantiate(_orbPrefabs[(int)_selectedOrb.GetComponent<Orb>().Type], transform);
+        _ghostOrb = Instantiate(_orbPrefabs[(int)_selectedOrb.GetComponent<Orb>().Type - 1], transform);
         _ghostOrb.transform.localPosition = new Vector2((float)c.X, (float)c.Y);
         
         _ghostOrb.GetComponent<Orb>().State = OrbState.Ghost;
@@ -147,18 +148,18 @@ public class Board : MonoBehaviour {
     // while loop for a little too long when generating initial board
     private void SpawnRandomOrb(int col, int row, bool allowMatches) {
         Vector2 position = new Vector2((float)col, (float)row);
-        int orbType = UnityEngine.Random.Range(0, _orbPrefabs.Length);
+        int orbType = UnityEngine.Random.Range(1, _orbPrefabs.Length + 1);
         
-        GameObject orb = Instantiate(_orbPrefabs[orbType], transform);
+        GameObject orb = Instantiate(_orbPrefabs[orbType - 1], transform);
         orb.GetComponent<Orb>().Type = (OrbType)orbType;
         orb.GetComponent<Orb>().Location = new Coords(col, row);
         if (!allowMatches) {
             while (IsValid(col, row, orb.GetComponent<Orb>().Type)) {
-                orb.GetComponent<Orb>().Type = (OrbType)UnityEngine.Random.Range(0, 5);
+                orb.GetComponent<Orb>().Type = (OrbType)UnityEngine.Random.Range(1, 6);
             }
             orbType = (int)orb.GetComponent<Orb>().Type;
             Destroy(orb);
-            orb = Instantiate(_orbPrefabs[orbType], transform);
+            orb = Instantiate(_orbPrefabs[orbType - 1], transform);
             orb.GetComponent<Orb>().Type = (OrbType)orbType;
             orb.GetComponent<Orb>().Location = new Coords(col, row);
         }
@@ -206,7 +207,7 @@ public class Board : MonoBehaviour {
     private void CheckForMatches() {
         _combo = 0;
         _shouldSkyfall = false;
-        _uiManager.ResetTextFields();
+        _combatManager.ResetUnitDamageUI();
         StartCoroutine(CheckMatches());
     }
     
@@ -243,8 +244,8 @@ public class Board : MonoBehaviour {
             }
         }
         _combo++;
+        _combatManager.CalculateMatchDamage(t, numConnected);
         _uiManager.UpdateTextField(TextField.Combo, _combo);
-        _uiManager.UpdateTextField((TextField)((int)t + 1), numConnected);
     }
 
     private void UpdateUnmatchedOrbs() {

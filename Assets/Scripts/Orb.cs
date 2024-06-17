@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public enum OrbType {
-    Red, Green, Blue, Yellow, Purple, Gray
+    None = 0, Red = 1, Green = 2, Blue = 3, Yellow = 4, Purple = 5, Gray = 6
 }
 
 public enum OrbState {

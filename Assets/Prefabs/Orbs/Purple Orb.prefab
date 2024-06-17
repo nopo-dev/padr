@@ -8,6 +8,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 6346082785083325115, guid: 140f99e2edb86fe498ceaa4d7f03c6a3, type: 3}
+      propertyPath: Type
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 6492403484911981119, guid: 140f99e2edb86fe498ceaa4d7f03c6a3, type: 3}
       propertyPath: m_Name
       value: Purple Orb
